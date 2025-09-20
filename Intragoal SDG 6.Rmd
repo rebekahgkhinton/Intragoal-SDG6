@@ -1,0 +1,507 @@
+---
+title: "Intragoal SDG 6 analysis"
+output: html_document
+---
+```{r}
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(rworldmap)
+library(sf)
+library(circlize)
+library(tidyr)
+library(stringr)
+```
+
+#Country level classifications. Load data summaries based on flow diagram of country level classifications- supplementary information
+```{r}
+# Load the raw input files
+data_raw <- read.csv("summary_df_with_characteristics_large_total_data.csv")
+synergies_raw <- read.csv("synergies_total.csv")
+
+# Clean column names
+colnames(data_raw) <- trimws(colnames(data_raw))
+
+# Convert blanks to NA
+data_raw[data_raw == ""] <- NA
+
+```
+
+
+```{r}
+# Convert characteristics to numeric: 1 = present, 0 = NA/absent
+data_clean <- data_raw %>%
+  mutate(across(-Country, ~ as.numeric(!is.na(.)))) %>%
+  replace(is.na(.), 0) %>%
+  filter(rowSums(select(., -Country)) >= 1)
+
+# Assign unique clusters based on distinct rows
+clusters_df <- data_clean %>%
+  select(-Country) %>%
+  distinct() %>%
+  mutate(cluster = row_number())
+
+data_with_clusters <- data_clean %>%
+  left_join(clusters_df, by = colnames(clusters_df)[1:(ncol(clusters_df)-1)])
+```
+
+# Standardise country names
+
+```{r}
+# Remove "_total" suffix
+data_with_clusters$Country <- str_replace(data_with_clusters$Country, "_total$", "")
+
+# Country name mapping (for world map consistency)
+country_mapping <- c(
+  "Bolivia (Plurinational State of)" = "Bolivia",
+  "Bosnia and Herzegovina" = "Bosnia and Herz.",
+  "China, Hong Kong SAR" = "Hong Kong",
+  "China, Macao SAR" = "Macao",
+  "CÃ´te d'Ivoire" = "Ivory Coast",
+  "Democratic People's Republic of Korea" = "N. Korea",
+  "Democratic Republic of the Congo" = "Congo (Kinshasa)",
+  "Eswatini" = "Swaziland",
+  "North Macedonia" = "Macedonia",
+  "Republic of Korea" = "S. Korea",
+  "Russian Federation" = "Russia",
+  "State of Palestine" = "West Bank",
+  "Timor-Leste" = "East Timor",
+  "Türkiye" = "Turkey",
+  "Viet Nam" = "Vietnam"
+  # Add more if needed
+)
+
+data_with_clusters$Country <- recode(data_with_clusters$Country, !!!country_mapping)
+synergies_raw$Country <- recode(synergies_raw$Country, !!!country_mapping)
+
+```
+
+#Combine and map trade-offs and synergies
+```{r}
+trade_off_groups <- data_with_clusters %>%
+  select(Country, Group)  # Group assigned during clustering
+
+combined_data <- bind_rows(trade_off_groups, synergies_raw)
+
+# Custom color palette
+custom_colors <- c(
+  "Environment" = "#669966",
+  "Environment and sanitation" = "#B8DE29FF",
+  "Environment and water use" = "#009999",
+  "Water use" = "#2D708EFF",
+  "Sanitation" = "#FFCC66",
+  "WaSH" = "#99CCCC",
+  "Tradeoffs in all" = "#F37A48",
+  "NA"="grey85",
+  "Firm Synergy" = "#C8A2CB",
+  "Risky Synergy Water Use"= "#8AB8D1",
+  "Risky Synergy Water Use and Environment"= "#CCFFFF",
+  "Risky Synergy Environment"=  "#CCE5CC"
+)
+
+# World map as sf object
+world_map_sf <- st_as_sf(rworldmap::getMap())
+
+# Merge with combined data
+world_map_data <- world_map_sf %>%
+  left_join(combined_data, by = c("NAME" = "Country"))
+
+# Plot
+ggplot(world_map_data) +
+  geom_sf(data = world_map_data %>% filter(is.na(Group)), fill = "grey85", color = NA) +
+  geom_sf(aes(fill = as.factor(Group)), color = "grey30") +
+  scale_fill_manual(name = "Group", values = custom_colors, na.value = "grey85") +
+  theme_minimal() +
+  labs(title = "National Trade-offs and Synergies within SDG6") +
+  theme(
+    legend.position = "right",
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text = element_blank(),
+    axis.title = element_blank()
+  )
+
+```
+
+#Intragoal trade-offs
+#Data accessed from UN SDG database and JMP
+```{r}
+# ----------------------------
+# 1. Load and merge datasets
+# ----------------------------
+load_sdg_data <- function(jmp_path, un_sdg_path) {
+  jmp_data <- read.csv(jmp_path)[,-1]
+  un_sdg6 <- read.csv(un_sdg_path)[,-1]
+  
+  # Rename columns
+  names(jmp_data)[1:2] <- c("Country", "Date")
+  
+  # Merge datasets
+  merged_data <- left_join(jmp_data, un_sdg6, by = c("Country", "Date"))
+  return(merged_data)
+}
+
+# ----------------------------
+# 2. Clean and preprocess data
+# ----------------------------
+clean_sdg_data <- function(data) {
+  # Columns to remove (example)
+  columns_to_remove <- c(
+    "X6.3.1.EN_WWT_GEN_TOTAL", "X6.3.1.EN_WWT_TREAT_TOTAL",
+    "X6.6.1.EN_LKRV_PWAN", "X6.6.1.EN_LKRV_SWAN",
+    "X6.6.1.EN_RSRV_MNWAN", "X6.6.1.EN_WBE_HMWTL",
+    "X6.3.1.EN_WWT_GEN_SERVICES", "X6.2.1.SH_SAN_SAFE"
+  )
+  data <- data[, !names(data) %in% columns_to_remove]
+  
+  # Reverse specific indicators (negative values reflect stress)
+  reverse_cols <- c(
+    "X6.4.2.ER_H2O_STRESS_INDUSTRIES",
+    "X6.4.2.ER_H2O_STRESS_ISIC4_A01_A0210_A0322",
+    "X6.4.2.ER_H2O_STRESS_ISIC4_GTT",
+    "X6.4.2.ER_H2O_STRESS_TOTAL",
+    "Open_Def"
+  )
+  for (col in reverse_cols) {
+    if (col %in% names(data)) {
+      data[[col]] <- 100 - data[[col]]
+    }
+  }
+  
+  return(data)
+}
+
+# ----------------------------
+# 3. Map series codes to names
+# ----------------------------
+map_series_codes <- function(data, series_code_path) {
+  series_code_names <- read.csv(series_code_path)
+  series_code_names$series_code_sdg <- paste(series_code_names$Indicator, series_code_names$SeriesCode, sep = ".")
+  
+  # Create mapping and rename
+  names_mapping <- setNames(series_code_names$series_code_sdg, series_code_names$SeriesCode)
+  new_colnames <- ifelse(colnames(data) %in% names(names_mapping),
+                         names_mapping[colnames(data)],
+                         colnames(data))
+  colnames(data) <- new_colnames
+  
+  # Clean up names
+  colnames(data) <- gsub("^X", "", colnames(data))
+  colnames(data) <- gsub("ISIC4_A01_A0210_A0322", "Agriculture", colnames(data))
+  colnames(data) <- gsub("ISIC4_GTT", "Services", colnames(data))
+  
+  return(data)
+}
+
+# ----------------------------
+# 4. Calculate per-country correlation matrices
+# ----------------------------
+calculate_correlation_matrices <- function(data) {
+  cor.mtest <- function(mat) {
+    mat <- as.matrix(mat)
+    n <- ncol(mat)
+    p.mat <- matrix(NA, n, n)
+    diag(p.mat) <- 0
+    for (i in 1:(n-1)) {
+      for (j in (i+1):n) {
+        tmp <- cor.test(mat[,i], mat[,j], method = "spearman")
+        p.mat[i,j] <- p.mat[j,i] <- tmp$p.value
+      }
+    }
+    colnames(p.mat) <- rownames(p.mat) <- colnames(mat)
+    return(p.mat)
+  }
+  
+  calculate_correlation <- function(df) {
+    numeric_data <- df %>% select(-c(Country, Date)) %>% mutate(across(everything(), ~replace_na(., 0)))
+    
+    if (nrow(numeric_data) < 3 || ncol(numeric_data) < 3) return(NULL)
+    
+    ranges <- apply(numeric_data, 2, function(col) max(col, na.rm=TRUE) - min(col, na.rm=TRUE))
+    max_value <- max(apply(numeric_data, 2, max, na.rm=TRUE))
+    valid_columns <- which(ranges >= 0.01 * max_value)
+    numeric_data <- numeric_data[, valid_columns, drop = FALSE]
+    
+    if (ncol(numeric_data) < 3) return(NULL)
+    
+    cor_matrix <- cor(numeric_data, method = "spearman")
+    p.mat <- cor.mtest(numeric_data)
+    
+    return(list(cor_matrix = cor_matrix, p.mat = p.mat))
+  }
+  
+  # Split by country
+  data_split <- split(data, data$Country)
+  data_split <- data_split[sapply(data_split, ncol) >= 6]
+  
+  correlation_matrices <- purrr::map(data_split, calculate_correlation)
+  correlation_matrices <- correlation_matrices[!sapply(correlation_matrices, is.null)]
+  return(correlation_matrices)
+}
+
+# ----------------------------
+# 5. Create summary matrices
+# ----------------------------
+create_summary_matrix <- function(correlation_matrices, variable_names) {
+  pad_matrix_by_names <- function(mat, variable_names) {
+    padded <- matrix(NA, nrow = length(variable_names), ncol = length(variable_names))
+    colnames(padded) <- rownames(padded) <- variable_names
+    existing_vars <- colnames(mat)
+    padded[existing_vars, existing_vars] <- mat
+    return(padded)
+  }
+  
+  padded_matrices <- lapply(correlation_matrices, function(x) pad_matrix_by_names(x$cor_matrix, variable_names))
+  combined_matrix <- do.call(rbind, lapply(padded_matrices, as.vector))
+  combined_matrix <- as.data.frame(combined_matrix)
+  
+  # Set column names
+  correlation_pairs <- c()
+  for (row in variable_names) {
+    for (col in variable_names) {
+      correlation_pairs <- c(correlation_pairs, paste(row, "X", col, sep="."))
+    }
+  }
+  colnames(combined_matrix) <- correlation_pairs
+  
+  # Replace all NA with 0
+  combined_matrix[is.na(combined_matrix)] <- 0
+  return(combined_matrix)
+}
+
+# ----------------------------
+# 6. Normalize by counts
+# ----------------------------
+normalize_interactions <- function(df, counts_from, counts_to) {
+  df$from_normalized <- df$value / counts_from[df$from]
+  df$from_to_normalized <- df$from_normalized / counts_to[df$to]
+  df$value <- df$from_to_normalized
+  df <- df[, c("from", "to", "value")]
+  return(df)
+}
+
+# ----------------------------
+# 7. Chord diagram plotting
+# ----------------------------
+plot_chord <- function(data, colors, title_text, filename_png, filename_pdf, sector_order) {
+  png(filename_png, width = 800, height = 600)
+  chordDiagram(
+    data,
+    grid.col = colors,
+    annotationTrack = c("name","grid"),
+    annotationTrackHeight = c(0.05,0.07),
+    order = sector_order
+  )
+  title(title_text)
+  dev.off()
+  
+  pdf(filename_pdf, width = 8, height = 6)
+  chordDiagram(
+    data,
+    grid.col = colors,
+    annotationTrack = c("name","grid"),
+    annotationTrackHeight = c(0.05,0.07),
+    order = sector_order
+  )
+  title(title_text)
+  dev.off()
+}
+```
+
+#Intratarget trade-off
+#SDG 6.4
+```{r}
+# =========================================
+# SDG6.4 Tradeoffs Analysis: Modular R Script
+# =========================================
+
+library(dplyr)
+library(broom)
+library(tidyr)
+library(scales)
+library(fmsb)  # for radar charts
+
+# ----------------------------
+# 1. Load the dataset
+# ----------------------------
+# Replace with your own CSV path
+data_path <- "path/to/Tradeoffs_within_sdg6.4.csv"
+data <- read.csv(data_path)
+
+# ----------------------------
+# 2. Define metrics and analysis function
+# ----------------------------
+metrics <- setdiff(names(data), c("Country", "Year", "X"))
+
+analyze_trends <- function(df, country_column, metric_column) {
+  df %>%
+    filter(!is.na(.[[metric_column]])) %>%
+    filter(grepl("^[0-9.>]+$", .[[metric_column]])) %>%
+    mutate(!!sym(metric_column) := ifelse(grepl("^>99$", .[[metric_column]]), 99, as.numeric(.[[metric_column]]))) %>%
+    group_by(!!sym(country_column)) %>%
+    filter(sum(!is.na(.[[metric_column]])) >= 3) %>%
+    do({
+      metric_values <- .[[metric_column]]
+      range_check <- max(metric_values, na.rm = TRUE) - min(metric_values, na.rm = TRUE)
+      if (sum(!is.na(.$Year)) >= 3 && range_check >= 1) {
+        tidy(cor.test(.$Year, metric_values, use = "complete.obs"))
+      } else {
+        tibble(estimate = NA, p.value = NA)
+      }
+    }) %>%
+    ungroup() %>%
+    mutate(Metric = metric_column)
+}
+
+# ----------------------------
+# 3. Run analysis for all metrics
+# ----------------------------
+results_list <- lapply(metrics, function(metric) {
+  analyze_trends(data, "Country", metric)
+})
+
+combined_results <- bind_rows(results_list)
+
+# ----------------------------
+# 4. Save combined results
+# ----------------------------
+output_path_all <- "path/to/summary_all_correlations_sdg6.4_with_p_value.csv"
+write.csv(combined_results, output_path_all, row.names = FALSE)
+
+# Filter by significance
+filtered_results <- combined_results %>%
+  mutate(estimate = ifelse(.data$p.value >= 0.05, NA, estimate)) %>%
+  select(Country, Metric, estimate)
+
+wide_results <- filtered_results %>%
+  pivot_wider(names_from = Metric, values_from = estimate)
+
+output_path_significant <- "path/to/summary_significant_correlations_sdg6.4.csv"
+write.csv(wide_results, output_path_significant, row.names = FALSE)
+
+# ----------------------------
+# 5. Split metrics into WUEYST and stress
+# ----------------------------
+wueyst <- wide_results %>% select(Country, 2:5)
+stress <- wide_results %>% select(Country, (ncol(wide_results)-3):ncol(wide_results))
+
+write.csv(wueyst, "path/to/wueyst_sdg6.4.csv", row.names = FALSE)
+write.csv(stress, "path/to/stress_sdg6.4.csv", row.names = FALSE)
+
+# ----------------------------
+# 6. Filter rows with negative values
+# ----------------------------
+wueyst_filtered <- wueyst %>% filter(if_any(everything(), ~ . < 0))
+stress_filtered <- stress %>% filter(if_any(everything(), ~ . < 0))
+
+write.csv(wueyst_filtered, "path/to/wueyst_sdg6.4_negative_values.csv", row.names = FALSE)
+write.csv(stress_filtered, "path/to/stress_sdg6.4_negative_values.csv", row.names = FALSE)
+
+# ----------------------------
+# 7. Keep rows with more than 1 non-NA value
+# ----------------------------
+wueyst_filtered <- wueyst_filtered %>%
+  rowwise() %>%
+  filter(sum(!is.na(c_across(X6.4.1.ER_H2O_WUEYST_Agriculture:X6.4.1.ER_H2O_WUEYST_Services))) > 1) %>%
+  ungroup()
+
+stress_filtered <- stress_filtered %>%
+  rowwise() %>%
+  filter(sum(!is.na(c_across(X6.4.2.ER_H2O_STRESS_INDUSTRIES:X6.4.2.ER_H2O_STRESS_Services))) > 1) %>%
+  ungroup()
+
+# ----------------------------
+# 8. Identify rows with both positive and negative values
+# ----------------------------
+rows_with_pos_and_neg_wuest <- wueyst_filtered %>%
+  rowwise() %>%
+  mutate(has_pos_and_neg = any(c_across(X6.4.1.ER_H2O_WUEYST_Agriculture:X6.4.1.ER_H2O_WUEYST_Services) > 0) &
+                           any(c_across(X6.4.1.ER_H2O_WUEYST_Agriculture:X6.4.1.ER_H2O_WUEYST_Services) < 0))
+
+rows_with_pos_and_neg_stress <- stress_filtered %>%
+  rowwise() %>%
+  mutate(has_pos_and_neg = any(c_across(X6.4.2.ER_H2O_STRESS_INDUSTRIES:X6.4.2.ER_H2O_STRESS_Services) > 0) &
+                           any(c_across(X6.4.2.ER_H2O_STRESS_INDUSTRIES:X6.4.2.ER_H2O_STRESS_Services) < 0))
+
+# ----------------------------
+# 9. Convert values to binary presence of negative values
+# ----------------------------
+wueyst_binary <- wueyst_filtered %>%
+  mutate(across(-Country, ~ ifelse(. < 0, 1, NA)))
+
+stress_binary <- stress_filtered %>%
+  mutate(across(-Country, ~ ifelse(. < 0, 1, NA)))
+
+wueyst_summary <- wueyst_binary %>% summarise(across(-Country, sum, na.rm = TRUE))
+stress_summary <- stress_binary %>% summarise(across(-Country, sum, na.rm = TRUE))
+
+wueyst_summary_percent <- wueyst_summary * 100 / nrow(wueyst_binary)
+stress_summary_percent <- stress_summary * 100 / nrow(stress_binary)
+
+# ----------------------------
+# 10. Prepare summary for radar chart
+# ----------------------------
+extract_last_word <- function(name) {
+  sapply(strsplit(name, "_"), function(x) tail(x, 1))
+}
+
+colnames(stress_summary_percent) <- extract_last_word(colnames(stress_summary_percent))
+colnames(wueyst_summary_percent) <- extract_last_word(colnames(wueyst_summary_percent))
+
+rownames(stress_summary_percent) <- "stress"
+rownames(wueyst_summary_percent) <- "wueyst"
+
+combined_df_summary_sdg6.4 <- rbind(stress_summary_percent, wueyst_summary_percent)
+
+max_min <- data.frame(
+  INDUSTRIES= c(100,0),
+  Agriculture= c(100,0),
+  TOTAL = c(100,0),
+  Services= c(100,0)
+)
+rownames(max_min) <- c("Max", "Min")
+
+combined_df_summary_sdg6.4_radar <- rbind(max_min, combined_df_summary_sdg6.4)
+
+capitalize_first_letter <- function(name) {
+  sapply(name, function(x) {
+    paste0(toupper(substr(x, 1, 1)), tolower(substr(x, 2, nchar(x))))
+  })
+}
+
+colnames(combined_df_summary_sdg6.4_radar) <- capitalize_first_letter(colnames(combined_df_summary_sdg6.4_radar))
+
+# ----------------------------
+# 11. Function to create radar charts
+# ----------------------------
+create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+                                        vlabels = colnames(data), vlcex = 0.7,
+                                        caxislabels = NULL, title = NULL, alpha = 0.3, ...){
+  radarchart(
+    data, axistype = 1,
+    pcol = color, pfcol = scales::alpha(color, alpha), plwd = 2, plty = 1,
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    axislabcol = "grey", vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, ...
+  )
+  title(main = title)
+}
+
+# ----------------------------
+# 12. Plot radar chart
+# ----------------------------
+op <- par(mar = c(1, 2, 2, 2))
+create_beautiful_radarchart(
+  data = combined_df_summary_sdg6.4_radar, 
+  color = c("#FF7F00", "#6CA6CD"), alpha = 0.3, title = "SDG6.4"
+)
+
+legend(
+  x = "bottom", legend = rownames(combined_df_summary_sdg6.4_radar[-c(1,2),]), horiz = TRUE,
+  bty = "n", pch = 20, col = c("#FF7F00", "#6CA6CD"),
+  text.col = "black", cex = 1, pt.cex = 1.5
+)
+par(op)
+
+```
+
