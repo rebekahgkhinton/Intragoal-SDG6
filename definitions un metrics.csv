@@ -1,0 +1,117 @@
+﻿Indicator,SeriesCode,SeriesDescription
+6.a.1,DC_TOF_WASHL,"Total official development assistance (gross disbursement) for water supply and sanitation, by recipient countries (millions of constant 2022 United States dollars)"
+6.5.2,EG_TBA_H2CO,Proportion of transboundary basins (river and lake basins and aquifers) with an operational arrangement for water cooperation (%)
+6.5.2,EG_TBA_H2COAQ,Proportion of transboundary aquifers with an operational arrangement for water cooperation (%)
+6.5.2,EG_TBA_H2CORL,Proportion of transboundary river and lake basins with an operational arrangement for water cooperation (%)
+6.3.2,EN_H2O_GRAMBQ,Proportion of groundwater bodies with good ambient water quality (%)
+6.3.2,EN_H2O_OPAMBQ,Proportion of open water bodies with good ambient water quality (%)
+6.3.2,EN_H2O_RVAMBQ,Proportion of river water bodies with good ambient water quality (%)
+6.3.2,EN_H2O_WBAMBQ,Proportion of bodies of water with good ambient water quality (%)
+6.6.1,EN_LKRV_PWAC,Lakes and rivers permanent water area change (%)
+6.6.1,EN_LKRV_PWAN,Lakes and rivers permanent water area (square kilometres)
+6.6.1,EN_LKRV_PWAP,Lakes and rivers permanent water area (% of total land area)
+6.6.1,EN_LKRV_SWAC,Lakes and rivers seasonal water area change (%)
+6.6.1,EN_LKRV_SWAN,Lakes and rivers seasonal water area (square kilometres)
+6.6.1,EN_LKRV_SWAP,Lakes and rivers seasonal water area (% of total land area)
+6.6.1,EN_LKW_QLTRB,Lake water quality turbidity (%)
+6.6.1,EN_LKW_QLTRST,Lake water quality trophic state (%)
+6.6.1,EN_RSRV_MNWAC,Reservoir minimum water area change (%)
+6.6.1,EN_RSRV_MNWAN,Reservoir minimum water area (square kilometres)
+6.6.1,EN_RSRV_MNWAP,Reservoir minimum water area (% of total land area)
+6.6.1,EN_RSRV_MXWAN,Reservoir maximum water area (square kilometres)
+6.6.1,EN_RSRV_MXWAP,Reservoir maximum water area (% of total land area)
+6.6.1,EN_WBE_HMWTL,Extent of human made wetlands (square kilometres)
+6.6.1,EN_WBE_INWTL,Extent of inland wetlands (square kilometres)
+6.6.1,EN_WBE_MANGC,Mangrove total area change (%)
+6.6.1,EN_WBE_MANGN,Mangrove area (square kilometres)
+6.6.1,EN_WBE_NDQTGRW,Nationally derived quantity of groundwater (millions of cubic metres per annum)
+6.6.1,EN_WBE_NDQTRVR,Nationally derived quantity of rivers (million of cubic metres per annum)
+6.6.1,EN_WBE_WTLN,Wetlands area (square kilometres)
+6.6.1,EN_WBE_WTLP,Wetlands area (% of total land area)
+6.3.1,EN_WWT_GEN,Total wastewater generated (million m3/year)
+6.3.1,EN_WWT_GEN_TOTAL,
+6.3.1,EN_WWT_GEN_SERV_HH,
+6.3.1,EN_WWT_GEN_PRIV_HH,
+6.3.1,EN_WWT_GEN_SERVICES,
+6.3.1,EN_WWT_GEN_ISIC4_E,
+6.3.1,EN_WWT_GEN_ISIC4_F,
+6.3.1,EN_WWT_GEN_ISIC4_B,
+6.3.1,EN_WWT_GEN_ISIC4_D,
+6.3.1,EN_WWT_GEN_ISIC4_C,
+6.3.1,EN_WWT_GEN_INDUSTRIES,
+6.3.1,EN_WWT_GEN_ISIC4_A,
+6.3.1,EN_WWT_TREAT,Total wastewater treated (million m3/year)
+6.3.1,EN_WWT_TREAT_TOTAL,
+6.3.1,EN_WWT_TREAT_INDUSTRIES,
+6.3.1,EN_WWT_TREAT_SF_TOTAL,
+6.3.1,EN_WWT_TREAT_SF_INDUSTRIES,
+,,
+,,
+6.3.1,EN_WWT_TREAT_SF,Total wastewater safely treated (million m3/year)
+6.3.1,EN_WWT_TREATR,"Proportion of wastewater treated, by activity and location (%)"
+6.3.1,EN_WWT_TREATR_TOTAL,
+6.3.1,EN_WWT_TREATR_INDUSTRIES,
+6.3.1,EN_WWT_TREATR_SF_TOTAL,
+6.3.1,EN_WWT_TREATR_SF_INDUSTRIES,
+,,
+,,
+6.3.1,EN_WWT_TREATR_SF,"Proportion of wastewater safely treated, by activity and location (%)"
+6.3.1,EN_WWT_WWDS,Proportion of safely treated domestic wastewater flows (%)
+6.5.1,ER_H2O_IWRMD,Degree of integrated water resources management implementation (%)
+6.5.1,ER_H2O_IWRMD_EE,"Degree of integrated water resources management implementation, enabling environment (%)"
+6.5.1,ER_H2O_IWRMD_FI,"Degree of integrated water resources management implementation, financing (%)"
+6.5.1,ER_H2O_IWRMD_IP,"Degree of integrated water resources management implementation, institutions and participation (%)"
+6.5.1,ER_H2O_IWRMD_MI,"Degree of integrated water resources management implementation, management instruments (%)"
+6.5.1,ER_H2O_IWRMP,Proportion of countries by IWRM implementation category (%)
+6.b.1,ER_H2O_PARTIC,Proportion of countries with high level of users/communities participating in planning programs in rural drinking-water supply (%)
+6.b.1,ER_H2O_PRDU,"Countries with procedures in law or policy for participation by service users/communities in planning program in rural drinking-water supply, by level of definition in procedures (10 = Clearly defined; 5 = Not clearly defined ; 0 = NA)"
+6.b.1,ER_H2O_PROCED,Proportion of countries with clearly defined procedures in law or policy for participation by service users/communities in planning program in rural drinking-water supply (%)
+6.b.1,ER_H2O_RURP,"Countries with users/communities participating in planning programs in rural drinking-water supply, by level of participation (3 = High; 2 = Moderate; 1 = Low; 0 = NA)"
+6.4.2,ER_H2O_STRESS,Level of water stress: freshwater withdrawal as a proportion of available freshwater resources (%)
+6.4.2,ER_H2O_STRESS_INDUSTRIES,
+6.4.2,ER_H2O_STRESS_ISIC4_A01_A0210_A0322,
+6.4.2,ER_H2O_STRESS_TOTAL,
+6.4.2,ER_H2O_STRESS_ISIC4_GTT,
+,,
+,,
+6.4.1,ER_H2O_WUEYST,Water Use Efficiency (United States dollars per cubic meter)
+6.4.1,ER_H2O_WUEYST_ISIC4_A01_A0210_A0322,
+6.4.1,ER_H2O_WUEYST_INDUSTRIES,
+6.4.1,ER_H2O_WUEYST_TOTAL,
+6.4.1,ER_H2O_WUEYST_ISIC4_GTT,
+,,
+,,
+6.b.1,ER_WAT_PART,"Countries with users/communities participating in planning programs in water resources planning and management, by level of participation (3 = High; 2 = Moderate; 1 = Low; 0 = NA)"
+6.b.1,ER_WAT_PARTIC,Proportion of countries with high level of users/communities participating in planning programs in water resources planning and management (%)
+6.b.1,ER_WAT_PRDU,"Countries with procedures in law or policy for participation by service users/communities in planning program in water resources planning and management, by level of definition in procedures (10 = Clearly defined; 5 = Not clearly defined ; 0 = NA)"
+6.b.1,ER_WAT_PROCED,Proportion of countries with clearly defined procedures in law or policy for participation by service users/communities in planning program in water resources planning and management (%)
+6.1.1,SH_H2O_SAFE,"Proportion of population using safely managed drinking water services, by urban/rural (%)"
+6.2.1,SH_SAN_DEFECT,"Proportion of population practicing open defecation, by urban/rural (%)"
+6.2.1,SH_SAN_HNDWSH,"Proportion of population with basic handwashing facilities on premises, by urban/rural (%)"
+6.2.1,SH_SAN_SAFE,"Proportion of population using safely managed sanitation services, by urban/rural (%)"
+6.1.1,Basic_water,
+6.1.1,Limited_water,
+6.1.1,Unimproved_water,
+6.1.1,Surface_water,
+6.1.1,Annual_rate_change_water,
+6.1.1,Safely_managed_water,
+6.1.1,Accessible_water,
+6.1.1,Available_water,
+6.1.1,No_contam,
+6.1.1,Annual_rate_change_safe_managed,
+6.1.1,Water_Piped,
+6.1.1,Water_non_piped,
+6.2.1,Basic_san,
+6.2.1,Limited_san,
+6.2.1,Unimproved_san,
+6.2.1,Open_Def,
+6.2.1,Annual_Rate_change_basic_san,
+6.2.1,Annual_rate_change_OD,
+6.2.1,Safe_managed_san,
+6.2.1,disposed_in_situ,
+6.2.1,emptied_treated,
+6.3.1,wastewater_treated,
+6.2.1,Annual_rate_change_safely_managed,
+6.2.2,basic_hygiene,
+6.2.2,hygiene_limited,
+6.2.2,no_hygiene,
